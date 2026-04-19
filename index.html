@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>小红书短剧小说 · 原型 v2</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#FF2442;--red2:#FF5C72;--orange:#FF6B35;--gold:#F5A623;
+  --dark:#0D0D0F;--card:#1A1A1F;--panel:#222228;
+  --t1:#FFF;--t2:rgba(255,255,255,.65);--t3:rgba(255,255,255,.35);
+  --bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.18);
+  --r1:8px;--r2:14px;--r3:20px;--r4:28px;
+}
+html,body{width:100%;height:100%;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',sans-serif;color:#fff;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* ── Frame ── */
+.wrap{display:flex;align-items:center;justify-content:center;height:100vh;background:radial-gradient(ellipse at center,#1a0a0f,#080808);gap:24px}
+.phone{width:390px;height:844px;background:var(--dark);border-radius:50px;overflow:hidden;position:relative;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,.1),0 40px 100px rgba(0,0,0,.9),0 0 60px rgba(255,36,66,.12)}
+
+/* ── Status bar ── */
+.sbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:12px;font-weight:600;position:absolute;top:0;left:0;right:0;z-index:300;pointer-events:none}
+.sbar.dark{color:#fff}.sbar.light{color:#1a1208;background:rgba(245,237,211,.95)}
+.sbar-time{font-size:15px;font-weight:700}
+.sbar-icons{display:flex;gap:5px;align-items:center}
+.sbar-icons svg{width:15px;height:15px;fill:currentColor}
+
+/* ── Tab bar ── */
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:82px;background:rgba(13,13,15,.96);backdrop-filter:blur(20px);border-top:1px solid var(--bd);display:flex;align-items:flex-start;justify-content:space-around;padding-top:10px;z-index:200}
+.tabbar.hidden{display:none}
+.ti{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 10px;flex:1;transition:.2s}
+.ti svg{width:24px;height:24px;stroke:var(--t3);fill:none;stroke-width:1.8;transition:.2s}
+.ti span{font-size:10px;font-weight:500;color:var(--t3);transition:.2s}
+.ti.on svg{stroke:var(--red)}.ti.on span{color:var(--red)}
+
+/* ── Page ── */
+.page{position:absolute;top:0;left:0;right:0;bottom:82px;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column}
+.page.on{display:flex}
+.page::-webkit-scrollbar{display:none}
+.page.fullscreen{bottom:0}
+
+/* ════════ HOME PAGE ════════ */
+/* sticky header with tabs */
+.home-hd{position:sticky;top:0;z-index:50;background:rgba(13,13,15,.92);backdrop-filter:blur(20px)}
+.home-hd-top{display:flex;align-items:center;justify-content:space-between;padding:48px 20px 0}
+.logo-row{display:flex;align-items:center;gap:8px}
+.logo-dot{width:28px;height:28px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff}
+.logo-txt{font-size:18px;font-weight:700}
+.hd-icons{display:flex;gap:12px}
+.hd-icon{width:34px;height:34px;background:rgba(255,255,255,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.hd-icon svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2}
+.badge-dot{position:absolute;top:2px;right:2px;width:7px;height:7px;background:var(--red);border-radius:50%}
+
+/* content type tabs (短剧 小说) */
+.content-tabs{display:flex;padding:10px 20px 0;gap:0}
+.ct{padding:8px 18px;font-size:15px;font-weight:500;color:var(--t3);cursor:pointer;position:relative;white-space:nowrap;transition:.2s}
+.ct.on{color:#fff;font-weight:700}
+.ct.on::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:20px;height:3px;background:var(--red);border-radius:2px}
+
+/* search bar */
+.search-bar{margin:10px 20px 0;height:36px;background:rgba(255,255,255,.07);border-radius:18px;display:flex;align-items:center;padding:0 14px;gap:8px;cursor:text}
+.search-bar svg{width:15px;height:15px;stroke:var(--t3);fill:none;stroke-width:2;flex-shrink:0}
+.search-bar span{font-size:13px;color:var(--t3)}
+.search-bar-spacer{flex:1}
+.search-camera{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.search-camera svg{width:18px;height:18px;stroke:var(--t3);fill:none;stroke-width:2}
+
+/* ad-entry banner — 广告入口（信息流形式） */
+.ad-entry-card{margin:12px 20px 0;border-radius:var(--r2);overflow:hidden;position:relative;height:160px;cursor:pointer;background:linear-gradient(135deg,#1a0535,#3d0a20,#1a1a2e);flex-shrink:0}
+.ad-entry-bg{position:absolute;inset:0;background:linear-gradient(135deg,#6B21A8,#EC4899,#F97316);opacity:.25}
+.ad-entry-cover{position:absolute;right:0;top:0;bottom:0;width:120px;background:linear-gradient(135deg,#4B0082,#C71585);display:flex;align-items:center;justify-content:center;font-size:52px}
+.ad-entry-cover::before{content:'';position:absolute;left:0;top:0;bottom:0;width:40px;background:linear-gradient(to right,rgba(26,5,53,1),transparent)}
+.ad-entry-info{position:absolute;left:0;top:0;bottom:0;right:100px;padding:16px;display:flex;flex-direction:column;justify-content:space-between}
+.ad-tag{display:inline-flex;align-items:center;gap:4px;background:var(--red);border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;color:#fff;width:fit-content}
+.ad-title{font-size:17px;font-weight:800;line-height:1.35;margin-top:4px}
+.ad-sub{font-size:11px;color:var(--t2);margin-top:4px}
+.ad-cta-row{display:flex;align-items:center;justify-content:space-between}
+.ad-cta{background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:6px 16px;border-radius:14px;cursor:pointer}
+.ad-label{font-size:10px;color:var(--t3)}
+
+/* section header */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px}
+.sec-title{font-size:16px;font-weight:700}
+.sec-more{font-size:12px;color:var(--t3);cursor:pointer}
+
+/* drama horizontal scroll */
+.drama-row{display:flex;gap:12px;padding:0 20px 4px;overflow-x:auto}
+.drama-row::-webkit-scrollbar{display:none}
+.dc{flex-shrink:0;width:120px;cursor:pointer}
+.dc:active{opacity:.8}
+.dc-cover{width:120px;height:160px;border-radius:var(--r2);overflow:hidden;position:relative;margin-bottom:7px}
+.dc-cover-bg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px}
+.dc-free{position:absolute;top:6px;left:6px;background:var(--red);border-radius:4px;padding:2px 6px;font-size:9px;color:#fff;font-weight:700}
+.dc-lock{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);border-radius:4px;padding:2px 6px;font-size:9px;color:var(--gold);font-weight:600}
+.dc-ep-count{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.6);border-radius:4px;padding:2px 6px;font-size:9px;color:#fff}
+.dc-title{font-size:12px;font-weight:600;line-height:1.4;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dc-meta{font-size:10px;color:var(--t3)}
+
+/* novel waterfall grid */
+.novel-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 20px}
+.nc{background:var(--card);border-radius:var(--r2);overflow:hidden;cursor:pointer;border:1px solid var(--bd);transition:.2s}
+.nc:active{opacity:.8}
+.nc-cover{width:100%;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative}
+.nc-cover-tag{position:absolute;top:8px;left:8px;background:var(--red);border-radius:4px;padding:2px 6px;font-size:9px;color:#fff;font-weight:700}
+.nc-info{padding:10px}
+.nc-title{font-size:12px;font-weight:600;line-height:1.4;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px}
+.nc-tag{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,36,66,.15);color:var(--red2);font-weight:500}
+.nc-meta{font-size:10px;color:var(--t3)}
+
+/* ════════ AD ENTRY DEMO PAGE (广告入口前置) ════════ */
+.feed-page{background:var(--dark)}
+.feed-hd{position:sticky;top:0;z-index:50;background:rgba(13,13,15,.92);backdrop-filter:blur(20px);padding:48px 20px 10px;display:flex;align-items:center;justify-content:space-between}
+.feed-hd-title{font-size:17px;font-weight:700}
+.feed-tabs2{display:flex;gap:0;padding:0 20px}
+.ft2{padding:7px 16px;font-size:14px;font-weight:500;color:var(--t3);cursor:pointer;position:relative}
+.ft2.on{color:#fff;font-weight:700}
+.ft2.on::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:18px;height:2.5px;background:var(--red);border-radius:2px}
+/* feed cards */
+.feed-list{padding:12px 14px;display:flex;flex-direction:column;gap:12px}
+.feed-card{background:var(--card);border-radius:var(--r2);overflow:hidden;border:1px solid var(--bd);cursor:pointer;transition:.15s}
+.feed-card:active{opacity:.85}
+.feed-card-media{width:100%;aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center;font-size:60px}
+.feed-card-media-bg{position:absolute;inset:0}
+.feed-card-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.feed-play-btn{width:48px;height:48px;background:rgba(255,255,255,.2);backdrop-filter:blur(6px);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.feed-play-btn svg{width:20px;height:20px;fill:#fff;margin-left:3px}
+.feed-card-ad-tag{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.6);border-radius:4px;padding:2px 7px;font-size:9px;color:var(--gold);font-weight:600}
+.feed-card-body{padding:12px}
+.feed-card-title{font-size:14px;font-weight:700;margin-bottom:5px}
+.feed-card-desc{font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.feed-card-footer{display:flex;align-items:center;justify-content:space-between}
+.feed-card-user{display:flex;align-items:center;gap:7px}
+.feed-avatar-sm{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--orange));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.feed-username{font-size:12px;color:var(--t2)}
+.feed-cta-btn{background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:6px 16px;border-radius:14px;display:flex;align-items:center;gap:4px}
+
+/* novel feed card */
+.novel-feed-card{background:var(--card);border-radius:var(--r2);overflow:hidden;border:1px solid var(--bd);cursor:pointer;display:flex;gap:0}
+.novel-feed-cover{width:90px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:40px;min-height:120px}
+.novel-feed-body{flex:1;padding:14px 14px 14px 10px;display:flex;flex-direction:column;gap:6px}
+.novel-feed-title{font-size:14px;font-weight:700;line-height:1.4}
+.novel-feed-tags{display:flex;gap:5px;flex-wrap:wrap}
+.novel-feed-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,36,66,.15);color:var(--red2)}
+.novel-feed-desc{font-size:12px;color:var(--t2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.novel-feed-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+.novel-feed-meta{font-size:11px;color:var(--t3)}
+.novel-feed-cta{background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:5px 14px;border-radius:12px}
+
+/* ════════ LANDING PAGE ════════ */
+.lp-hero{position:relative;height:380px;flex-shrink:0}
+.lp-hero-bg{position:absolute;inset:0}
+.lp-hero-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:90px;opacity:.2}
+.lp-hero-grad{position:absolute;bottom:0;left:0;right:0;height:200px;background:linear-gradient(to top,var(--dark) 30%,transparent)}
+.lp-back{position:absolute;top:52px;left:16px;width:36px;height:36px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10}
+.lp-back svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2}
+.lp-share{position:absolute;top:52px;right:16px;width:36px;height:36px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10}
+.lp-share svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2}
+
+.lp-info{padding:0 20px;margin-top:-50px;position:relative;z-index:5}
+.lp-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(255,36,66,.2);border:1px solid rgba(255,36,66,.3);border-radius:5px;padding:2px 9px;font-size:11px;color:var(--red2);margin-bottom:8px}
+.lp-title{font-size:21px;font-weight:800;margin-bottom:6px;line-height:1.3}
+.lp-stats{display:flex;gap:14px;margin-bottom:10px}
+.lp-stat{font-size:12px;color:var(--t2)}.lp-stat strong{color:#fff;font-weight:600}
+.lp-desc{font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:3px}
+.lp-more{font-size:12px;color:var(--red2);margin-bottom:14px;cursor:pointer}
+
+.lp-progress{background:var(--card);border-radius:var(--r2);padding:12px 14px;margin-bottom:0;border:1px solid var(--bd)}
+.lp-prog-label{font-size:11px;color:var(--t3);margin-bottom:7px}
+.lp-prog-track{height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin-bottom:5px}
+.lp-prog-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:2px}
+.lp-prog-txt{font-size:11px;color:var(--t2)}
+
+/* episode grid */
+.ep-sec{padding:14px 20px 110px}
+.ep-sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ep-sec-title{font-size:15px;font-weight:700}
+.ep-sec-sub{font-size:11px;color:var(--t3)}
+.ep-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:14px}
+.ep-btn{aspect-ratio:1;border-radius:var(--r1);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;position:relative}
+.ep-btn.free{background:rgba(255,255,255,.07);color:#fff}
+.ep-btn.free:active{background:rgba(255,255,255,.14)}
+.ep-btn.cur{background:var(--red);color:#fff;box-shadow:0 4px 12px rgba(255,36,66,.4)}
+.ep-btn.lock{background:rgba(255,255,255,.03);color:var(--t3)}
+.ep-lock-ico{font-size:9px;margin-top:1px}
+
+/* novel chapter list */
+.chap-list{display:flex;flex-direction:column}
+.chap-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--bd);cursor:pointer}
+.chap-item:active{opacity:.7}
+.chap-name{font-size:13px;font-weight:600}
+.chap-name.cur{color:var(--red)}
+.chap-meta{font-size:11px;color:var(--t3);margin-top:2px}
+.chap-right{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3)}
+.chap-price{color:var(--orange);font-weight:600}
+
+/* landing CTA bar */
+.lp-cta{position:absolute;bottom:82px;left:0;right:0;padding:10px 20px 14px;background:linear-gradient(to top,var(--dark) 75%,transparent);display:flex;gap:10px;z-index:50}
+.btn-sec{flex:1;height:48px;border-radius:24px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:.2s}
+.btn-sec:active{background:rgba(255,255,255,.08)}
+.btn-pri{flex:2;height:48px;border-radius:24px;background:linear-gradient(135deg,var(--red),#FF5C72);border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 6px 18px rgba(255,36,66,.4);transition:.2s}
+.btn-pri:active{transform:scale(.97)}
+
+/* ════════ PLAYER PAGE ════════ */
+.player-wrap{position:absolute;inset:0;background:#000;display:flex;align-items:center;justify-content:center}
+.player-video-bg{position:absolute;inset:0;background:linear-gradient(180deg,#0a0a14,#1a0a28,#0a0a14);display:flex;align-items:center;justify-content:center}
+.player-center-label{text-align:center;opacity:.2}
+.player-center-label .big-emoji{font-size:80px}
+.player-center-label p{font-size:13px;color:#fff;margin-top:8px}
+
+/* overlay */
+.player-ov{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+
+/* top bar */
+.pl-top{padding:52px 16px 0;display:flex;align-items:center;gap:10px;background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);pointer-events:all}
+.pl-back{width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.pl-back svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2}
+.pl-title-wrap{flex:1}
+.pl-drama-name{font-size:14px;font-weight:700}
+.pl-ep-info{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.pl-list-btn{padding:5px 12px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border-radius:14px;font-size:12px;font-weight:500;cursor:pointer}
+
+/* right side actions — XHS C端视频流样式 */
+.pl-right{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:22px;align-items:center;pointer-events:all}
+.pl-action{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pl-action-icon{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.pl-action-icon svg{width:30px;height:30px}
+.pl-action-count{font-size:12px;font-weight:500;color:rgba(255,255,255,.85)}
+
+/* heart (like) */
+.heart-icon{fill:none;stroke:#fff;stroke-width:1.8;transition:.2s}
+.heart-icon.liked{fill:#FF2442;stroke:#FF2442}
+
+/* bottom controls */
+.pl-bottom{padding:0 16px 28px;background:linear-gradient(to top,rgba(0,0,0,.8),transparent);pointer-events:all}
+.seek-row{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.seek-bar{flex:1;height:3px;background:rgba(255,255,255,.2);border-radius:2px;position:relative;cursor:pointer}
+.seek-fill{height:100%;width:45%;background:#fff;border-radius:2px;position:relative}
+.seek-thumb{position:absolute;right:-5px;top:-4px;width:11px;height:11px;background:#fff;border-radius:50%}
+.seek-time{font-size:11px;color:rgba(255,255,255,.65)}
+.pl-btm-controls{display:flex;align-items:center;justify-content:space-between}
+.speed-btn{font-size:12px;font-weight:600;background:rgba(255,255,255,.14);border-radius:10px;padding:4px 10px;cursor:pointer}
+.pl-next-btn{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;cursor:pointer}
+.pl-next-btn svg{width:18px;height:18px;fill:#fff}
+.auto-row{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.55)}
+.toggle-pill{width:30px;height:17px;background:var(--red);border-radius:9px;position:relative;flex-shrink:0}
+.toggle-pill::after{content:'';position:absolute;right:2px;top:2px;width:13px;height:13px;background:#fff;border-radius:50%}
+
+/* ep drawer */
+.ep-drawer{position:absolute;bottom:0;left:0;right:0;background:var(--card);border-radius:var(--r4) var(--r4) 0 0;padding:14px 0 40px;z-index:150;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1)}
+.ep-drawer.open{transform:translateY(0)}
+.drawer-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 14px}
+.drawer-title{font-size:15px;font-weight:700;padding:0 20px 10px;border-bottom:1px solid var(--bd);margin-bottom:10px}
+.ep-drawer-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;padding:0 20px;max-height:260px;overflow-y:auto}
+.ep-drawer-grid::-webkit-scrollbar{display:none}
+.ep-db{aspect-ratio:1;border-radius:var(--r1);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.07);transition:.15s}
+.ep-db.cur{background:var(--red)}
+.ep-db.lock{color:var(--t3);font-size:10px}
+
+/* ════════ READER PAGE ════════ */
+.reader-wrap{position:absolute;inset:0;background:#F5EDD3;color:#1a1208;display:flex;flex-direction:column}
+.reader-hd{flex-shrink:0;background:rgba(245,237,211,.97);backdrop-filter:blur(10px);padding:44px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,0,0,.07);z-index:50}
+.reader-back{cursor:pointer;flex-shrink:0}
+.reader-back svg{width:22px;height:22px;stroke:#1a1208;fill:none;stroke-width:2}
+.reader-title-wrap{flex:1}
+.reader-novel-name{font-size:13px;font-weight:700;color:#1a1208}
+.reader-chap-name{font-size:11px;color:#6B6050;margin-top:2px}
+.reader-aa{width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;font-weight:700;color:#3a3020;flex-shrink:0}
+
+/* content area — fixed height, no scroll bleed */
+.reader-body{flex:1;overflow-y:auto;padding:20px 20px 0;position:relative}
+.reader-body::-webkit-scrollbar{display:none}
+.chap-headline{font-size:19px;font-weight:800;color:#1a1208;margin-bottom:18px;line-height:1.4}
+.chap-text{font-size:16px;line-height:1.85;color:#2a2010;letter-spacing:.02em}
+.chap-text p{margin-bottom:16px}
+/* fade + pay wall */
+.reader-paywall{flex-shrink:0;background:#F5EDD3;padding:0 20px 14px;border-top:1px solid rgba(0,0,0,.06)}
+.reader-paywall-blur{height:70px;background:linear-gradient(to bottom,transparent,#F5EDD3);margin-top:-70px;pointer-events:none;position:relative;z-index:1}
+.reader-paywall-inner{position:relative;z-index:2;text-align:center;padding-top:12px}
+.paywall-title{font-size:14px;font-weight:700;color:#1a1208;margin-bottom:4px}
+.paywall-sub{font-size:12px;color:#6B6050;margin-bottom:12px}
+.paywall-btn{background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:14px;font-weight:700;padding:12px 36px;border-radius:22px;cursor:pointer;box-shadow:0 5px 16px rgba(255,36,66,.3);width:100%}
+
+/* reader bottom nav */
+.reader-nav{flex-shrink:0;display:flex;border-top:1px solid rgba(0,0,0,.07);background:rgba(245,237,211,.97)}
+.reader-nav-btn{flex:1;height:46px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:13px;font-weight:600;color:#3a3020;cursor:pointer;transition:.15s}
+.reader-nav-btn:active{background:rgba(0,0,0,.04)}
+.reader-nav-btn:not(:last-child){border-right:1px solid rgba(0,0,0,.07)}
+.reader-nav-btn svg{width:16px;height:16px;stroke:#3a3020;fill:none;stroke-width:2}
+
+/* reader toc drawer */
+.reader-toc{position:absolute;bottom:0;left:0;right:0;background:#FFF9EF;border-radius:var(--r4) var(--r4) 0 0;padding:14px 0 40px;z-index:200;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);max-height:75%}
+.reader-toc.open{transform:translateY(0)}
+.toc-handle{width:36px;height:4px;background:rgba(0,0,0,.12);border-radius:2px;margin:0 auto 14px;cursor:pointer}
+.toc-title{font-size:15px;font-weight:700;color:#1a1208;padding:0 20px 10px;border-bottom:1px solid rgba(0,0,0,.07);margin-bottom:8px}
+.toc-list{overflow-y:auto;max-height:260px;padding:0 20px}
+.toc-list::-webkit-scrollbar{display:none}
+.toc-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;font-size:13px;color:#2a2010}
+.toc-row.cur{color:var(--red);font-weight:600}
+.toc-row.lock{color:#9a9080}
+.toc-right{font-size:11px;color:#9a9080}
+
+/* reader settings */
+.reader-settings{position:absolute;bottom:0;left:0;right:0;background:#FFF9EF;border-radius:var(--r4) var(--r4) 0 0;padding:14px 0 36px;z-index:200;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1)}
+.reader-settings.open{transform:translateY(0)}
+.rs-section{padding:0 20px 14px;border-bottom:1px solid rgba(0,0,0,.05);margin-bottom:4px}
+.rs-label{font-size:12px;color:#6B6050;margin-bottom:10px;font-weight:500}
+.rs-font-row{display:flex;align-items:center;gap:10px}
+.rs-font-btn{width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-weight:700;color:#2a2010;cursor:pointer}
+.rs-track{flex:1;height:3px;background:rgba(0,0,0,.1);border-radius:2px}
+.rs-fill{height:100%;width:60%;background:var(--red);border-radius:2px}
+.rs-bgs{display:flex;gap:8px}
+.rs-bg{width:46px;height:30px;border-radius:6px;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;cursor:pointer;transition:.2s}
+.rs-bg.on{border-color:var(--red)}
+
+/* ════════ SHELF PAGE ════════ */
+.shelf-hd{padding:52px 20px 12px;font-size:22px;font-weight:800}
+.shelf-tabs{display:flex;padding:0 20px;gap:4px;margin-bottom:14px}
+.shelf-tab{flex:1;height:34px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--t3);border-radius:var(--r1);cursor:pointer;transition:.2s}
+.shelf-tab.on{background:rgba(255,36,66,.14);color:var(--red);font-weight:600}
+.shelf-list{padding:0 20px 100px;display:flex;flex-direction:column}
+.shelf-item{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--bd);cursor:pointer;transition:.15s}
+.shelf-item:active{opacity:.7}
+.shelf-cover{width:68px;height:90px;border-radius:var(--r1);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px}
+.shelf-info{flex:1;min-width:0;padding-top:2px}
+.shelf-title{font-size:14px;font-weight:700;margin-bottom:3px}
+.shelf-sub{font-size:11px;color:var(--t3);margin-bottom:7px}
+.shelf-prog-txt{font-size:11px;color:var(--t2);margin-bottom:6px}
+.shelf-prog-track{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-bottom:8px;overflow:hidden}
+.shelf-prog-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:2px}
+.shelf-continue{display:inline-flex;align-items:center;gap:4px;background:var(--red);color:#fff;font-size:11px;font-weight:600;padding:4px 11px;border-radius:11px;cursor:pointer}
+
+/* ════════ PROFILE PAGE ════════ */
+.profile-hd{padding:52px 20px 16px;background:linear-gradient(180deg,rgba(255,36,66,.08),transparent)}
+.profile-user-row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.avatar{width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--orange));display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;flex-shrink:0}
+.profile-name{font-size:17px;font-weight:700;margin-bottom:3px}
+.profile-uid{font-size:11px;color:var(--t3)}
+.profile-stats{display:flex;background:var(--card);border-radius:var(--r2);padding:12px 0;border:1px solid var(--bd);margin-bottom:16px}
+.pstat{flex:1;text-align:center;border-right:1px solid var(--bd)}
+.pstat:last-child{border-right:none}
+.pstat-num{font-size:19px;font-weight:800}
+.pstat-lbl{font-size:10px;color:var(--t3);margin-top:3px}
+.profile-menu{padding:0 20px 100px}
+.menu-grp-title{font-size:12px;color:var(--t3);padding:14px 0 7px;font-weight:500}
+.menu-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd);cursor:pointer;transition:.15s}
+.menu-row:active{opacity:.6}
+.menu-icon-box{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.menu-lbl{flex:1;font-size:14px;font-weight:500}
+.menu-arrow{color:var(--t3);font-size:16px}
+.menu-badge{background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:9px;margin-right:3px}
+
+/* ════════ MODAL: PAY ════════ */
+.modal-ov{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-ov.open{opacity:1;pointer-events:all}
+.pay-sheet{width:100%;background:var(--card);border-radius:var(--r4) var(--r4) 0 0;padding:14px 0 40px;transform:translateY(50px);transition:transform .35s cubic-bezier(.32,.72,0,1)}
+.modal-ov.open .pay-sheet{transform:translateY(0)}
+.pay-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px}
+.pay-hd{padding:0 20px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;gap:12px}
+.pay-cover{width:52px;height:68px;border-radius:var(--r1);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px}
+.pay-info{flex:1}
+.pay-title{font-size:14px;font-weight:700;margin-bottom:3px}
+.pay-lock-info{font-size:12px;color:var(--t3)}
+.pay-lock-ep{color:#fff;font-weight:600}
+.pay-opts{padding:14px 20px}
+.pay-opt{border:2px solid var(--bd);border-radius:var(--r2);padding:12px 14px;margin-bottom:9px;cursor:pointer;transition:.15s;position:relative}
+.pay-opt.sel{border-color:var(--orange);background:rgba(255,107,53,.08)}
+.pay-opt.rec::before{content:'最划算';position:absolute;top:-1px;right:10px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:0 0 5px 5px}
+.pay-opt-row{display:flex;align-items:center;justify-content:space-between;padding-right:26px}
+.pay-opt-title{font-size:14px;font-weight:600}
+.pay-opt-price{font-size:17px;font-weight:800;color:var(--orange)}
+.pay-opt-sub{font-size:11px;color:var(--t3);margin-top:3px}
+.pay-opt-save{font-size:11px;color:var(--orange);font-weight:500;margin-top:3px}
+.pay-opt-check{position:absolute;top:12px;right:14px;width:18px;height:18px;border-radius:50%;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center}
+.pay-opt.sel .pay-opt-check{border-color:var(--orange);background:var(--orange)}
+.pay-opt.sel .pay-opt-check::after{content:'';width:5px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px);display:block}
+.pay-methods{padding:0 20px 14px;border-top:1px solid var(--bd)}
+.pay-method-title{font-size:12px;color:var(--t3);padding:12px 0 9px}
+.pay-method-list{display:flex;gap:8px}
+.pay-method-btn{flex:1;height:40px;border-radius:var(--r1);border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:500;cursor:pointer;transition:.15s}
+.pay-method-btn.sel{border-color:var(--orange);background:rgba(255,107,53,.08);color:var(--orange)}
+.pay-method-icon{font-size:16px}
+.pay-confirm{margin:0 20px;height:50px;border-radius:25px;background:linear-gradient(135deg,var(--orange),var(--gold));border:none;color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 5px 18px rgba(255,107,53,.4);width:calc(100% - 40px);transition:.2s}
+.pay-confirm:active{transform:scale(.97)}
+.pay-terms{text-align:center;font-size:10px;color:var(--t3);margin-top:9px;padding:0 20px}
+.pay-terms a{color:var(--red2)}
+
+/* ════════ MODAL: SUCCESS ════════ */
+.success-ov{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:600;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.success-ov.open{opacity:1;pointer-events:all}
+.success-card{background:var(--card);border-radius:var(--r4);padding:28px 22px;width:290px;text-align:center;border:1px solid var(--bd);transform:scale(.85);transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.success-ov.open .success-card{transform:scale(1)}
+.success-icon{width:60px;height:60px;background:linear-gradient(135deg,#22C55E,#16A34A);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px}
+.success-title{font-size:19px;font-weight:800;margin-bottom:7px}
+.success-sub{font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.6}
+.success-btn{width:100%;height:46px;border-radius:23px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:.2s}
+.success-btn:active{transform:scale(.97)}
+
+/* ════════ TOAST ════════ */
+.toast{position:absolute;bottom:100px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(40,40,40,.92);backdrop-filter:blur(10px);color:#fff;font-size:13px;font-weight:500;padding:9px 18px;border-radius:18px;z-index:900;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ════════ PROTO NAV ════════ */
+.proto-nav{width:210px;height:844px;background:#141418;border-radius:20px;padding:20px 14px;display:flex;flex-direction:column;gap:3px;border:1px solid rgba(255,255,255,.07);flex-shrink:0;overflow-y:auto}
+.proto-nav::-webkit-scrollbar{display:none}
+.pn-head{font-size:11px;color:rgba(255,255,255,.25);font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:0 8px 10px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:6px}
+.pn-grp{font-size:10px;color:rgba(255,255,255,.2);padding:10px 8px 3px;font-weight:600;letter-spacing:.05em}
+.pn-item{padding:8px 10px;border-radius:var(--r1);font-size:12px;cursor:pointer;transition:.2s;color:rgba(255,255,255,.45);display:flex;align-items:center;gap:7px}
+.pn-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.pn-item.on{background:rgba(255,36,66,.14);color:var(--red);font-weight:600}
+.pn-note{font-size:10px;color:rgba(255,255,255,.2);padding:4px 10px;line-height:1.7;margin-top:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ── Proto Nav ── -->
+<div class="proto-nav">
+  <div class="pn-head">🎬 原型导航 v2</div>
+
+  <div class="pn-grp">📱 落地页</div>
+  <div class="pn-item" onclick="go('drama-landing')">📄 短剧详情落地页</div>
+  <div class="pn-item" onclick="go('novel-landing')">📖 小说详情落地页</div>
+
+  <div class="pn-grp">🏠 原生入口链路</div>
+  <div class="pn-item on" onclick="go('home')">🏠 首页（短剧/小说 Tab）</div>
+
+  <div class="pn-grp">▶️ 短剧消费</div>
+  <div class="pn-item" onclick="go('player')">▶️ 播放器</div>
+  <div class="pn-item" onclick="openPay('drama')">💳 付费弹层（剧）</div>
+
+  <div class="pn-grp">📜 小说消费</div>
+  <div class="pn-item" onclick="go('reader')">📜 阅读器（一屏）</div>
+  <div class="pn-item" onclick="openPay('novel')">💳 付费弹层（书）</div>
+
+  <div class="pn-grp">👤 个人中心</div>
+  <div class="pn-item" onclick="switchTab('shelf')">📚 书架/剧场</div>
+  <div class="pn-item" onclick="switchTab('profile')">👤 我的</div>
+
+  <div class="pn-note">
+    ① 播放器右侧 = 小红书视频流样式<br>
+    ② 付费弹层关闭后正常返回<br>
+    ③ 阅读器固定一屏不滚出<br>
+    ④ 首页 Tab 切换短剧/小说内容流<br>
+    ⑤ 广告入口页展示信息流形态
+  </div>
+</div>
+
+<!-- ── Phone ── -->
+<div class="phone" id="phone">
+
+  <!-- Status bar -->
+  <div class="sbar dark" id="sbar">
+    <span class="sbar-time">00:01</span>
+    <div class="sbar-icons">
+      <svg viewBox="0 0 24 24"><path d="M1 6l5 5 6-6 6 6 5-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      <svg viewBox="0 0 24 24" style="width:20px"><rect x="2" y="7" width="18" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M22 11v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: home ══ -->
+  <div id="pg-home" class="page on">
+    <div class="home-hd">
+      <div class="home-hd-top">
+        <div class="logo-row">
+          <div class="logo-dot">薯</div>
+          <span class="logo-txt">短剧 · 小说</span>
+        </div>
+        <div class="hd-icons">
+          <div class="hd-icon" onclick="toast('搜索')"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+          <div class="hd-icon" onclick="toast('消息')"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div class="badge-dot"></div></div>
+        </div>
+      </div>
+      <!-- 短剧 / 小说 tabs -->
+      <div class="content-tabs">
+        <div class="ct on" id="ct-drama" onclick="setContentTab('drama')">短剧</div>
+        <div class="ct" id="ct-novel" onclick="setContentTab('novel')">小说</div>
+      </div>
+      <!-- search -->
+      <div class="search-bar" style="margin-bottom:10px">
+        <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span id="search-placeholder">搜短剧、剧名、演员</span>
+        <div class="search-bar-spacer"></div>
+        <div class="search-camera"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+      </div>
+    </div>
+
+    <!-- drama content -->
+    <div id="drama-content">
+      <!-- Banner -->
+      <div class="ad-entry-card" onclick="go('drama-landing')" style="margin-bottom:0">
+        <div class="ad-entry-bg"></div>
+        <div class="ad-entry-cover">💼</div>
+        <div class="ad-entry-info">
+          <div class="ad-tag">🔥 今日热播</div>
+          <div class="ad-title">总裁的替嫁甜妻</div>
+          <div class="ad-sub">都市甜宠 · 共48集 · 已完结</div>
+          <div class="ad-cta-row">
+            <div class="ad-cta">立即观看</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-hd"><span class="sec-title">🎬 热门短剧</span><span class="sec-more">更多 ›</span></div>
+      <div class="drama-row">
+        <div class="dc" onclick="go('drama-landing')">
+          <div class="dc-cover" style="background:linear-gradient(135deg,#4B0082,#C71585)"><div class="dc-cover-bg">💼</div><div class="dc-free">前6集免费</div><div class="dc-ep-count">48集</div></div>
+          <div class="dc-title">总裁的替嫁甜妻</div><div class="dc-meta">都市甜宠</div>
+        </div>
+        <div class="dc" onclick="go('drama-landing')">
+          <div class="dc-cover" style="background:linear-gradient(135deg,#8B0000,#FF4500)"><div class="dc-cover-bg">⚔️</div><div class="dc-free">前3集免费</div><div class="dc-lock">¥0.1/集</div><div class="dc-ep-count">60集</div></div>
+          <div class="dc-title">凤凰涅槃：女帝归来</div><div class="dc-meta">古装爽剧</div>
+        </div>
+        <div class="dc" onclick="go('drama-landing')">
+          <div class="dc-cover" style="background:linear-gradient(135deg,#006400,#228B22)"><div class="dc-cover-bg">🌿</div><div class="dc-free">前5集免费</div><div class="dc-ep-count">52集</div></div>
+          <div class="dc-title">穿越田园之发家致富</div><div class="dc-meta">古代生活</div>
+        </div>
+        <div class="dc" onclick="go('drama-landing')">
+          <div class="dc-cover" style="background:linear-gradient(135deg,#191970,#4169E1)"><div class="dc-cover-bg">🌙</div><div class="dc-free">全集免费</div><div class="dc-ep-count">24集</div></div>
+          <div class="dc-title">月夜迷城</div><div class="dc-meta">悬疑烧脑</div>
+        </div>
+      </div>
+
+      <div class="sec-hd" style="margin-top:6px"><span class="sec-title">⚡ 新剧速递</span><span class="sec-more">更多 ›</span></div>
+      <div class="drama-row" style="padding-bottom:20px">
+        <div class="dc" onclick="go('drama-landing')">
+          <div class="dc-cover" style="background:linear-gradient(135deg,#1a1a3e,#6a0dad)"><div class="dc-cover-bg">👑</div><div class="dc-free">前4集免费</div><div class="dc-ep-count">36集</div></div>
+          <div class="dc-title">重生后我成了太子妃</div><div class="dc-meta">古装甜宠</div>
+        </div>
+        <div class="dc" onclick="go('drama-landing')">
+          <div class="dc-cover" style="background:linear-gradient(135deg,#0d4f3c,#1a8c6e)"><div class="dc-cover-bg">🏥</div><div class="dc-free">前8集免费</div><div class="dc-ep-count">40集</div></div>
+          <div class="dc-title">绝世神医在都市</div><div class="dc-meta">都市爽文</div>
+        </div>
+        <div class="dc" onclick="go('drama-landing')">
+          <div class="dc-cover" style="background:linear-gradient(135deg,#5c0a0a,#c0392b)"><div class="dc-cover-bg">🔱</div><div class="dc-lock">¥0.08/集</div><div class="dc-ep-count">56集</div></div>
+          <div class="dc-title">战神归来之天下无敌</div><div class="dc-meta">热血战神</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- novel content (hidden by default) -->
+    <div id="novel-content" style="display:none">
+      <div class="sec-hd" style="padding-top:12px"><span class="sec-title">📖 今日推荐</span><span class="sec-more">更多 ›</span></div>
+      <div class="novel-grid">
+        <div class="nc" onclick="go('novel-landing')">
+          <div class="nc-cover" style="background:linear-gradient(135deg,#FF6B9D,#C44BC4)">💕<div class="nc-cover-tag">甜宠爆款</div></div>
+          <div class="nc-info"><div class="nc-title">替嫁后被豪门宠上天</div><div class="nc-tags"><span class="nc-tag">甜宠</span><span class="nc-tag">爽文</span></div><div class="nc-meta">已更320章</div></div>
+        </div>
+        <div class="nc" onclick="go('novel-landing')">
+          <div class="nc-cover" style="background:linear-gradient(135deg,#4A90D9,#7B68EE)">🗡️<div class="nc-cover-tag">玄幻</div></div>
+          <div class="nc-info"><div class="nc-title">我在异世界当大佬</div><div class="nc-tags"><span class="nc-tag">玄幻</span><span class="nc-tag">爽文</span></div><div class="nc-meta">已更580章</div></div>
+        </div>
+        <div class="nc" onclick="go('novel-landing')">
+          <div class="nc-cover" style="background:linear-gradient(135deg,#E67E22,#E74C3C)">🏥<div class="nc-cover-tag">医术流</div></div>
+          <div class="nc-info"><div class="nc-title">神医狂妻：冷少宠上瘾</div><div class="nc-tags"><span class="nc-tag">医术</span><span class="nc-tag">甜宠</span></div><div class="nc-meta">完结440章</div></div>
+        </div>
+        <div class="nc" onclick="go('novel-landing')">
+          <div class="nc-cover" style="background:linear-gradient(135deg,#1ABC9C,#27AE60)">🌊<div class="nc-cover-tag">都市</div></div>
+          <div class="nc-info"><div class="nc-title">都市最强赘婿逆袭传</div><div class="nc-tags"><span class="nc-tag">都市</span><span class="nc-tag">逆袭</span></div><div class="nc-meta">已更210章</div></div>
+        </div>
+        <div class="nc" onclick="go('novel-landing')">
+          <div class="nc-cover" style="background:linear-gradient(135deg,#8e44ad,#3498db)">🌌<div class="nc-cover-tag">玄幻</div></div>
+          <div class="nc-info"><div class="nc-title">修仙界第一混子</div><div class="nc-tags"><span class="nc-tag">修仙</span><span class="nc-tag">搞笑</span></div><div class="nc-meta">已更890章</div></div>
+        </div>
+        <div class="nc" onclick="go('novel-landing')">
+          <div class="nc-cover" style="background:linear-gradient(135deg,#c0392b,#8e44ad)">🔮<div class="nc-cover-tag">悬疑</div></div>
+          <div class="nc-info"><div class="nc-title">她从黑夜中归来</div><div class="nc-tags"><span class="nc-tag">悬疑</span><span class="nc-tag">反转</span></div><div class="nc-meta">完结260章</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: ad-feed 已移除 ══ -->
+
+  <!-- ══ PAGE: drama-landing ══ -->
+  <div id="pg-drama-landing" class="page">
+    <div class="lp-hero">
+      <div class="lp-hero-bg" style="background:linear-gradient(135deg,#1a0535,#3d0a20,#1a1a2e)"></div>
+      <div class="lp-hero-emoji">💼</div>
+      <div class="lp-hero-grad"></div>
+      <div class="lp-back" onclick="back()"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <div class="lp-share" onclick="toast('已分享')"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+    </div>
+    <div class="lp-info">
+      <div class="lp-badge">🎬 都市甜宠 · 共48集 · 已完结</div>
+      <div class="lp-title">总裁的替嫁甜妻</div>
+      <div class="lp-stats">
+        <div class="lp-stat"><strong>48</strong> 集</div>
+        <div class="lp-stat">⭐ <strong>9.2</strong></div>
+        <div class="lp-stat"><strong>12.4万</strong> 人在追</div>
+      </div>
+      <div class="lp-desc" id="drama-desc-short">林小雨误嫁帝豪集团总裁叶景行，本以为是有名无实的政治联姻，没想到总裁大人宠妻无底线…</div>
+      <div class="lp-desc" id="drama-desc-full" style="display:none">林小雨误嫁帝豪集团总裁叶景行，本以为是有名无实的政治联姻，没想到总裁大人宠妻无底线。从最初的形同陌路，到后来的无微不至，叶景行究竟隐藏着怎样的秘密？而林小雨的心，也在不知不觉中悄然改变……一段因误会开始的婚姻，能否走向真正的爱情？</div>
+      <div class="lp-more" id="drama-desc-toggle" onclick="toggleDesc('drama')">展开全部 ›</div>
+      <div class="lp-progress">
+        <div class="lp-prog-label">📍 上次看到第12集</div>
+        <div class="lp-prog-track"><div class="lp-prog-fill" style="width:25%"></div></div>
+        <div class="lp-prog-txt">已解锁12集 · 还剩36集未解锁</div>
+      </div>
+    </div>
+    <div class="ep-sec">
+      <div class="ep-sec-hd"><span class="ep-sec-title">集数列表</span><span class="ep-sec-sub">前6集免费</span></div>
+      <div class="ep-grid">
+        <div class="ep-btn free" onclick="go('player')">1</div>
+        <div class="ep-btn free" onclick="go('player')">2</div>
+        <div class="ep-btn free" onclick="go('player')">3</div>
+        <div class="ep-btn free" onclick="go('player')">4</div>
+        <div class="ep-btn free" onclick="go('player')">5</div>
+        <div class="ep-btn free" onclick="go('player')">6</div>
+        <div class="ep-btn free" onclick="go('player')">7</div>
+        <div class="ep-btn free" onclick="go('player')">8</div>
+        <div class="ep-btn free" onclick="go('player')">9</div>
+        <div class="ep-btn free" onclick="go('player')">10</div>
+        <div class="ep-btn free" onclick="go('player')">11</div>
+        <div class="ep-btn cur" onclick="go('player')">12</div>
+        <div class="ep-btn lock" onclick="openPay('drama')">13<div class="ep-lock-ico">🔒</div></div>
+        <div class="ep-btn lock" onclick="openPay('drama')">14<div class="ep-lock-ico">🔒</div></div>
+        <div class="ep-btn lock" onclick="openPay('drama')">15<div class="ep-lock-ico">🔒</div></div>
+        <div class="ep-btn lock" onclick="openPay('drama')">16<div class="ep-lock-ico">🔒</div></div>
+        <div class="ep-btn lock" onclick="openPay('drama')">17<div class="ep-lock-ico">🔒</div></div>
+        <div class="ep-btn lock" onclick="openPay('drama')">18<div class="ep-lock-ico">🔒</div></div>
+        <div class="ep-btn lock" onclick="openPay('drama')">19<div class="ep-lock-ico">🔒</div></div>
+        <div class="ep-btn lock" onclick="openPay('drama')">20<div class="ep-lock-ico">🔒</div></div>
+      </div>
+    </div>
+    <div class="lp-cta">
+      <button class="btn-sec" id="drama-unlock-btn" onclick="openPay('drama')">🔓 全集解锁</button>
+      <button class="btn-pri" onclick="go('player')">▶ 继续观看 第13集</button>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: novel-landing ══ -->
+  <div id="pg-novel-landing" class="page">
+    <div class="lp-hero" style="height:320px">
+      <div class="lp-hero-bg" style="background:linear-gradient(135deg,#1a0520,#3d1560,#1a2020)"></div>
+      <div class="lp-hero-grad"></div>
+      <div class="lp-back" onclick="back()"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <div class="lp-share" onclick="toast('已分享')"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+      <div style="position:absolute;bottom:24px;left:20px;display:flex;gap:14px;align-items:flex-end;z-index:5">
+        <div style="width:80px;height:106px;border-radius:10px;background:linear-gradient(135deg,#FF6B9D,#C44BC4);display:flex;align-items:center;justify-content:center;font-size:38px;box-shadow:0 8px 24px rgba(0,0,0,.5);flex-shrink:0">💕</div>
+        <div>
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:4px">爽文 · 已完结</div>
+          <div style="font-size:17px;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.5)">替嫁后被豪门宠上天</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px">共320章 · 夜风著</div>
+        </div>
+      </div>
+    </div>
+    <div class="lp-info" style="margin-top:0;padding-top:16px">
+      <div class="lp-stats">
+        <div class="lp-stat">⭐ <strong>9.6</strong></div>
+        <div class="lp-stat"><strong>86.2万</strong> 人在读</div>
+        <div class="lp-stat"><strong>完结</strong></div>
+      </div>
+      <div class="lp-desc" id="novel-desc-short">苏颜以为嫁的是垂死病人，没想到新婚夜，高冷总裁眼神危险："老婆，你说你的使命是什么？"从此被宠上天…</div>
+      <div class="lp-desc" id="novel-desc-full" style="display:none">苏颜以为嫁的是垂死病人，没想到新婚夜，高冷总裁眼神危险："老婆，你说你的使命是什么？"从此被宠上天。裴御南，S市商界第一人，冷酷无情传遍整个圈子，却对这个误嫁进门的小妻子格外纵容。苏颜始终不明白，他为什么会娶她，又为什么对她这么好……直到那一天，她翻到了那张旧照片。</div>
+      <div class="lp-more" id="novel-desc-toggle" onclick="toggleDesc('novel')">展开全部 ›</div>
+      <div class="lp-progress">
+        <div class="lp-prog-label">📍 读至第8章「误会」</div>
+        <div class="lp-prog-track"><div class="lp-prog-fill" style="width:3%"></div></div>
+        <div class="lp-prog-txt">已购至第15章 · 还剩305章未解锁</div>
+      </div>
+    </div>
+    <div class="ep-sec" style="padding-bottom:110px">
+      <div class="ep-sec-hd"><span class="ep-sec-title">章节目录</span><span class="ep-sec-sub">前10章免费</span></div>
+      <div class="chap-list">
+        <div class="chap-item" onclick="go('reader')"><div><div class="chap-name">第1章 · 婚礼当天</div><div class="chap-meta">免费</div></div><div class="chap-right"><svg width="14" height="14" viewBox="0 0 24 24" stroke="rgba(255,255,255,.3)" fill="none" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div></div>
+        <div class="chap-item" onclick="go('reader')"><div><div class="chap-name">第7章 · 初见端倪</div><div class="chap-meta">免费</div></div><div class="chap-right"><svg width="14" height="14" viewBox="0 0 24 24" stroke="rgba(255,255,255,.3)" fill="none" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div></div>
+        <div class="chap-item" onclick="go('reader')"><div><div class="chap-name cur">第8章 · 误会（当前）</div><div class="chap-meta" style="color:var(--red2)">阅读中</div></div><div class="chap-right"><svg width="14" height="14" viewBox="0 0 24 24" stroke="var(--red)" fill="none" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div></div>
+        <div class="chap-item" onclick="openPay('novel')"><div><div class="chap-name" style="color:var(--t3)">🔒 第9章 · 心动</div><div class="chap-meta"><span class="chap-price">¥0.1 · 点击解锁</span></div></div><div class="chap-right"><svg width="14" height="14" viewBox="0 0 24 24" stroke="rgba(255,255,255,.2)" fill="none" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div></div>
+        <div class="chap-item" onclick="openPay('novel')"><div><div class="chap-name" style="color:var(--t3)">🔒 第16章 · 真相</div><div class="chap-meta"><span class="chap-price">¥0.1 · 点击解锁</span></div></div><div class="chap-right"><svg width="14" height="14" viewBox="0 0 24 24" stroke="rgba(255,255,255,.2)" fill="none" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div></div>
+      </div>
+    </div>
+    <div class="lp-cta">
+      <button class="btn-sec" onclick="openPay('novel')">📖 全书解锁</button>
+      <button class="btn-pri" onclick="go('reader')">📖 继续阅读 第8章</button>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: player (fullscreen, no tabbar) ══ -->
+  <div id="pg-player" class="page fullscreen">
+    <div class="player-wrap">
+      <div class="player-video-bg">
+        <div class="player-center-label"><div class="big-emoji">💼</div><p>总裁的替嫁甜妻 · 第12集</p></div>
+      </div>
+      <div class="player-ov">
+        <!-- top -->
+        <div class="pl-top">
+          <div class="pl-back" onclick="back()"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="pl-title-wrap">
+            <div class="pl-drama-name">总裁的替嫁甜妻</div>
+            <div class="pl-ep-info">第12集 · 02:14 / 09:38</div>
+          </div>
+          <div class="pl-list-btn" onclick="toggleEpDrawer()">集数 ›</div>
+        </div>
+        <!-- right actions — XHS C端视频流样式 -->
+        <div class="pl-right">
+          <!-- 头像+关注 -->
+          <div class="pl-action">
+            <div class="pl-action-icon">
+              <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--orange));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;position:relative">
+                薯
+                <div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:18px;height:18px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:1.5px solid #000">+</div>
+              </div>
+            </div>
+          </div>
+          <!-- 点赞 -->
+          <div class="pl-action" onclick="toggleLike(this)">
+            <div class="pl-action-icon">
+              <svg id="heart-svg" class="heart-icon" viewBox="0 0 24 24" width="32" height="32">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" class="heart-icon" id="heart-path"/>
+              </svg>
+            </div>
+            <span class="pl-action-count" id="like-count">9.2万</span>
+          </div>
+          <!-- 评论 -->
+          <div class="pl-action" onclick="openComments()">
+            <div class="pl-action-icon">
+              <svg viewBox="0 0 24 24" width="30" height="30" stroke="#fff" fill="none" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <span class="pl-action-count">4387</span>
+          </div>
+          <!-- 收藏 -->
+          <div class="pl-action" id="fav-action" onclick="toggleFav()">
+            <div class="pl-action-icon">
+              <svg id="fav-star" viewBox="0 0 24 24" width="30" height="30" stroke="#fff" fill="none" stroke-width="1.8" style="transition:.2s"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <span class="pl-action-count" id="fav-count">2.1万</span>
+          </div>
+          <!-- 分享 -->
+          <div class="pl-action" onclick="openShareSheet()">
+            <div class="pl-action-icon">
+              <svg viewBox="0 0 24 24" width="30" height="30" stroke="#fff" fill="none" stroke-width="1.8"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </div>
+            <span class="pl-action-count">分享</span>
+          </div>
+          <!-- 更多 -->
+          <div class="pl-action" onclick="openMoreSheet()">
+            <div class="pl-action-icon">
+              <svg viewBox="0 0 24 24" width="28" height="28" stroke="#fff" fill="none" stroke-width="1.8"><circle cx="12" cy="5" r="1" fill="#fff"/><circle cx="12" cy="12" r="1" fill="#fff"/><circle cx="12" cy="19" r="1" fill="#fff"/></svg>
+            </div>
+          </div>
+        </div>
+        <!-- bottom -->
+        <div class="pl-bottom">
+          <div class="seek-row">
+            <span class="seek-time">02:14</span>
+            <div class="seek-bar"><div class="seek-fill"><div class="seek-thumb"></div></div></div>
+            <span class="seek-time">09:38</span>
+          </div>
+          <div class="pl-btm-controls">
+            <div class="speed-btn" onclick="cycleSpeed(this)">1.0x</div>
+            <div class="pl-next-btn" onclick="triggerNextEp()">
+              <svg viewBox="0 0 24 24"><path d="M6 4v16l11-8z"/><line x1="20" y1="4" x2="20" y2="20" stroke="#fff" stroke-width="2" fill="none"/></svg>
+              下一集
+            </div>
+            <div class="auto-row"><div class="toggle-pill"></div>自动连播</div>
+          </div>
+        </div>
+      </div>
+      <!-- ep drawer -->
+      <div class="ep-drawer" id="ep-drawer">
+        <div class="drawer-handle" onclick="toggleEpDrawer()"></div>
+        <div class="drawer-title">集数列表 <span style="font-size:12px;color:var(--t3);font-weight:400">共48集</span></div>
+        <div class="ep-drawer-grid">
+          <div class="ep-db" onclick="pickEp(this,1)">1</div><div class="ep-db" onclick="pickEp(this,2)">2</div>
+          <div class="ep-db" onclick="pickEp(this,3)">3</div><div class="ep-db" onclick="pickEp(this,4)">4</div>
+          <div class="ep-db" onclick="pickEp(this,5)">5</div><div class="ep-db" onclick="pickEp(this,6)">6</div>
+          <div class="ep-db" onclick="pickEp(this,7)">7</div><div class="ep-db" onclick="pickEp(this,8)">8</div>
+          <div class="ep-db" onclick="pickEp(this,9)">9</div><div class="ep-db" onclick="pickEp(this,10)">10</div>
+          <div class="ep-db" onclick="pickEp(this,11)">11</div><div class="ep-db cur" onclick="pickEp(this,12)">12</div>
+          <div class="ep-db lock" onclick="triggerNextEp()">13🔒</div><div class="ep-db lock" onclick="triggerNextEp()">14🔒</div>
+          <div class="ep-db lock" onclick="triggerNextEp()">15🔒</div><div class="ep-db lock" onclick="triggerNextEp()">16🔒</div>
+          <div class="ep-db lock" onclick="triggerNextEp()">17🔒</div><div class="ep-db lock" onclick="triggerNextEp()">18🔒</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: reader (fixed one-screen) ══ -->
+  <div id="pg-reader" class="page fullscreen">
+    <div class="reader-wrap">
+      <div class="reader-hd">
+        <div class="reader-back" onclick="back()"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div class="reader-title-wrap">
+          <div class="reader-novel-name">替嫁后被豪门宠上天</div>
+          <div class="reader-chap-name">第8章 · 误会</div>
+        </div>
+        <div class="reader-aa" onclick="toggleReaderSettings()">Aa</div>
+      </div>
+      <div class="reader-body">
+        <div class="chap-headline">第8章 · 误会</div>
+        <div class="chap-text">
+          <p>苏颜站在落地窗前，看着楼下灯火通明的城市，心里有些说不清道不明的情绪。</p>
+          <p>她以为嫁给了一个垂死的病人，以为这段婚姻不过是两个家族之间的利益交换。可是——</p>
+          <p>"你在想什么？"身后低沉的声音忽然响起，带着几分慵懒。</p>
+          <p>苏颜猛地转过身，看见裴晏川不知何时已经站在她身后，修长的身材随意靠在门框上，黑色睡袍衬得他面容愈发俊朗，一双深邃的眼睛此刻带着些许玩味看着她。</p>
+          <p>"我……我以为你睡着了。"苏颜有些慌乱地移开视线。</p>
+          <p>"我不是那么容易睡着的人。"裴晏川走近了两步，声音低沉如夜："尤其是房间里还有这么一个小东西在走来走去。"</p>
+        </div>
+      </div>
+      <!-- pay wall fixed at bottom -->
+      <div class="reader-paywall">
+        <div class="reader-paywall-blur"></div>
+        <div class="reader-paywall-inner">
+          <div class="paywall-title">🔒 下一章需要解锁</div>
+          <div class="paywall-sub">第9章「心动」· 付费章节</div>
+          <button class="paywall-btn" onclick="openPay('novel')">解锁下一章 ¥0.10</button>
+        </div>
+      </div>
+      <div class="reader-nav">
+        <div class="reader-nav-btn" onclick="toast('上一章')"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>上一章</div>
+        <div class="reader-nav-btn" onclick="openToc()"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>目录</div>
+        <div class="reader-nav-btn" onclick="openPay('novel')">下一章<svg viewBox="0 0 24 24" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+      <!-- toc -->
+      <div class="reader-toc" id="reader-toc">
+        <div class="toc-handle" onclick="closeToc()"></div>
+        <div class="toc-title">目录 <span style="font-size:12px;color:#6B6050;font-weight:400">共320章</span></div>
+        <div class="toc-list">
+          <div class="toc-row" onclick="closeToc();toast('第1章')"><span>第1章 · 婚礼当天</span><span class="toc-right">免费</span></div>
+          <div class="toc-row" onclick="closeToc();toast('第2章')"><span>第2章 · 初识</span><span class="toc-right">免费</span></div>
+          <div class="toc-row" onclick="closeToc();toast('第3章')"><span>第3章 · 约法三章</span><span class="toc-right">免费</span></div>
+          <div class="toc-row cur" onclick="closeToc()"><span>第8章 · 误会</span><span class="toc-right">当前</span></div>
+          <div class="toc-row lock" onclick="closeToc();openPay('novel')"><span>🔒 第9章 · 心动</span><span class="toc-right">¥0.1</span></div>
+          <div class="toc-row lock" onclick="closeToc();openPay('novel')"><span>🔒 第10章 · 靠近</span><span class="toc-right">¥0.1</span></div>
+          <div class="toc-row lock" onclick="closeToc();openPay('novel')"><span>🔒 第50章 · 告白</span><span class="toc-right">¥0.1</span></div>
+        </div>
+      </div>
+      <!-- settings -->
+      <div class="reader-settings" id="reader-settings">
+        <div class="drawer-handle" onclick="toggleReaderSettings()" style="background:rgba(0,0,0,.12)"></div>
+        <div class="rs-section">
+          <div class="rs-label">字体大小</div>
+          <div class="rs-font-row">
+            <div class="rs-font-btn" onclick="adjustFont(-1)" style="font-size:13px">A-</div>
+            <div class="rs-track"><div class="rs-fill" id="rs-fill"></div></div>
+            <div class="rs-font-btn" onclick="adjustFont(1)" style="font-size:18px">A+</div>
+          </div>
+        </div>
+        <div class="rs-section" style="border-bottom:none">
+          <div class="rs-label">背景色</div>
+          <div class="rs-bgs">
+            <div class="rs-bg white" onclick="setBg(this,'#fff','#111')">白天</div>
+            <div class="rs-bg yellow on" onclick="setBg(this,'#F5EDD3','#2a2010')" style="background:#F5EDD3;color:#5a4a20">米黄</div>
+            <div class="rs-bg" onclick="setBg(this,'#1a1a1a','#ccc')" style="background:#1a1a1a;color:#ccc">夜间</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: shelf ══ -->
+  <div id="pg-shelf" class="page">
+    <div class="shelf-hd">我的书架</div>
+    <div class="shelf-tabs">
+      <div class="shelf-tab on" id="shelf-tab-drama" onclick="setShelfTab('drama')">我的短剧</div>
+      <div class="shelf-tab" id="shelf-tab-novel" onclick="setShelfTab('novel')">我的小说</div>
+    </div>
+    <div class="shelf-list" id="shelf-list">
+      <div class="shelf-item" onclick="go('drama-landing')">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#4B0082,#C71585)">💼</div>
+        <div class="shelf-info">
+          <div class="shelf-title">总裁的替嫁甜妻</div>
+          <div class="shelf-sub">都市甜宠 · 共48集</div>
+          <div class="shelf-prog-txt">已看第12集 · 已购至第12集</div>
+          <div class="shelf-prog-track"><div class="shelf-prog-fill" style="width:25%"></div></div>
+          <div class="shelf-continue">▶ 继续观看</div>
+        </div>
+      </div>
+      <div class="shelf-item" onclick="go('drama-landing')">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#8B0000,#FF4500)">⚔️</div>
+        <div class="shelf-info">
+          <div class="shelf-title">凤凰涅槃：女帝归来</div>
+          <div class="shelf-sub">古装 · 共60集</div>
+          <div class="shelf-prog-txt">已看第3集 · 前3集免费</div>
+          <div class="shelf-prog-track"><div class="shelf-prog-fill" style="width:5%"></div></div>
+          <div class="shelf-continue">▶ 继续观看</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: profile ══ -->
+  <div id="pg-profile" class="page">
+    <div class="profile-hd">
+      <div class="profile-user-row">
+        <div class="avatar">小</div>
+        <div>
+          <div class="profile-name">小薯读者</div>
+          <div class="profile-uid">薯号：xhs_82739401</div>
+        </div>
+      </div>
+      <div class="profile-stats">
+        <div class="pstat" onclick="go('shelf-watching')" style="cursor:pointer"><div class="pstat-num">20</div><div class="pstat-lbl">在看</div></div>
+        <div class="pstat" onclick="go('shelf-finished')" style="cursor:pointer"><div class="pstat-num">8</div><div class="pstat-lbl">完结</div></div>
+      </div>
+    </div>
+    <div class="profile-menu">
+      <div class="menu-grp-title">我的内容</div>
+      <div class="menu-row" onclick="go('orders')">
+        <div class="menu-icon-box" style="background:rgba(255,107,53,.1)">🧾</div>
+        <div class="menu-lbl">购买记录</div><div class="menu-badge">3</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-row" onclick="go('wallet')">
+        <div class="menu-icon-box" style="background:rgba(245,166,35,.1)">💰</div>
+        <div class="menu-lbl">钱包</div>
+        <div style="font-size:12px;color:var(--t3);margin-right:4px">¥12.50</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-grp-title">设置</div>
+      <div class="menu-row" onclick="toast('设置页面')">
+        <div class="menu-icon-box" style="background:rgba(100,100,200,.1)">⚙️</div>
+        <div class="menu-lbl">设置</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-row" onclick="toast('隐私设置')">
+        <div class="menu-icon-box" style="background:rgba(50,200,100,.1)">🔒</div>
+        <div class="menu-lbl">隐私与数据</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-row" onclick="toast('意见反馈')">
+        <div class="menu-icon-box" style="background:rgba(255,36,66,.1)">💬</div>
+        <div class="menu-lbl">意见反馈</div><div class="menu-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: orders ══ -->
+  <div id="pg-orders" class="page">
+    <div style="padding:52px 20px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--bd)">
+      <div onclick="back()" style="cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="22" height="22" stroke="#fff" fill="none" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <span style="font-size:17px;font-weight:700">购买记录</span>
+    </div>
+    <div style="display:flex;padding:0 20px;gap:0;border-bottom:1px solid var(--bd)">
+      <div class="ct on" style="font-size:14px;padding:10px 16px" id="ot-all">全部</div>
+      <div class="ct" style="font-size:14px;padding:10px 16px" onclick="toast('短剧订单')">短剧</div>
+      <div class="ct" style="font-size:14px;padding:10px 16px" onclick="toast('小说订单')">小说</div>
+    </div>
+    <div style="padding:0 20px 100px">
+      <!-- 订单1 -->
+      <div style="padding:14px 0;border-bottom:1px solid var(--bd)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--t3)">2026-04-18 21:35</span>
+          <span style="font-size:12px;color:#22C55E;font-weight:600">已完成</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="width:52px;height:68px;border-radius:8px;background:linear-gradient(135deg,#4B0082,#C71585);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">💼</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;margin-bottom:3px">总裁的替嫁甜妻</div>
+            <div style="font-size:12px;color:var(--t3);margin-bottom:6px">解锁后20集（第13-32集）</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--orange);font-weight:700">¥1.50</span>
+              <div onclick="go('drama-landing')" style="font-size:12px;padding:4px 12px;border:1px solid rgba(255,255,255,.2);border-radius:12px;cursor:pointer;color:var(--t2)">继续观看</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 订单2 -->
+      <div style="padding:14px 0;border-bottom:1px solid var(--bd)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--t3)">2026-04-15 14:22</span>
+          <span style="font-size:12px;color:#22C55E;font-weight:600">已完成</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="width:52px;height:68px;border-radius:8px;background:linear-gradient(135deg,#FF6B9D,#C44BC4);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">💕</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;margin-bottom:3px">替嫁后被豪门宠上天</div>
+            <div style="font-size:12px;color:var(--t3);margin-bottom:6px">解锁后20章（第9-28章）</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--orange);font-weight:700">¥1.40</span>
+              <div onclick="go('reader')" style="font-size:12px;padding:4px 12px;border:1px solid rgba(255,255,255,.2);border-radius:12px;cursor:pointer;color:var(--t2)">继续阅读</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 订单3 -->
+      <div style="padding:14px 0;border-bottom:1px solid var(--bd)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--t3)">2026-04-10 09:08</span>
+          <span style="font-size:12px;color:#22C55E;font-weight:600">已完成</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="width:52px;height:68px;border-radius:8px;background:linear-gradient(135deg,#8B0000,#FF4500);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">⚔️</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;margin-bottom:3px">凤凰涅槃：女帝归来</div>
+            <div style="font-size:12px;color:var(--t3);margin-bottom:6px">单集解锁（第4集）</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--orange);font-weight:700">¥0.10</span>
+              <div onclick="go('drama-landing')" style="font-size:12px;padding:4px 12px;border:1px solid rgba(255,255,255,.2);border-radius:12px;cursor:pointer;color:var(--t2)">继续观看</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: wallet ══ -->
+  <div id="pg-wallet" class="page">
+    <div style="padding:52px 20px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--bd)">
+      <div onclick="back()" style="cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="22" height="22" stroke="#fff" fill="none" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <span style="font-size:17px;font-weight:700">钱包</span>
+    </div>
+    <!-- 余额卡片 -->
+    <div style="margin:20px;border-radius:20px;background:linear-gradient(135deg,#FF2442,#FF6B35);padding:24px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:rgba(255,255,255,.08);border-radius:50%"></div>
+      <div style="position:absolute;right:20px;bottom:-30px;width:80px;height:80px;background:rgba(255,255,255,.06);border-radius:50%"></div>
+      <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:8px">可用余额</div>
+      <div style="font-size:36px;font-weight:900;margin-bottom:4px">¥ 12.50</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.65)">累计充值 ¥58.00 · 已消费 ¥45.50</div>
+    </div>
+    <!-- 操作按钮 -->
+    <div style="display:flex;gap:12px;padding:0 20px;margin-bottom:20px">
+      <div onclick="toast('充值功能开发中')" style="flex:1;height:46px;border-radius:14px;background:var(--card);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;cursor:pointer">💳 充值</div>
+      <div onclick="toast('提现功能开发中')" style="flex:1;height:46px;border-radius:14px;background:var(--card);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;cursor:pointer;color:var(--t3)">🏦 提现</div>
+    </div>
+    <!-- 充值包 -->
+    <div style="padding:0 20px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">充值套餐</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div onclick="toast('选择¥6套餐')" style="border-radius:12px;border:1.5px solid var(--bd);padding:12px 8px;text-align:center;cursor:pointer;transition:.15s">
+          <div style="font-size:16px;font-weight:800;color:var(--orange)">¥6</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">6薯币</div>
+        </div>
+        <div onclick="toast('选择¥18套餐')" style="border-radius:12px;border:1.5px solid var(--orange);padding:12px 8px;text-align:center;cursor:pointer;background:rgba(255,107,53,.08);position:relative">
+          <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap">最热门</div>
+          <div style="font-size:16px;font-weight:800;color:var(--orange)">¥18</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">20薯币</div>
+        </div>
+        <div onclick="toast('选择¥50套餐')" style="border-radius:12px;border:1.5px solid var(--bd);padding:12px 8px;text-align:center;cursor:pointer">
+          <div style="font-size:16px;font-weight:800;color:var(--orange)">¥50</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">60薯币</div>
+        </div>
+      </div>
+    </div>
+    <!-- 消费记录 -->
+    <div style="padding:0 20px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">近期记录</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--bd)">
+        <div><div style="font-size:13px;font-weight:500">解锁 · 总裁的替嫁甜妻后20集</div><div style="font-size:11px;color:var(--t3);margin-top:2px">2026-04-18</div></div>
+        <div style="font-size:13px;color:#FF4444;font-weight:600">-¥1.50</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--bd)">
+        <div><div style="font-size:13px;font-weight:500">充值</div><div style="font-size:11px;color:var(--t3);margin-top:2px">2026-04-15</div></div>
+        <div style="font-size:13px;color:#22C55E;font-weight:600">+¥18.00</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--bd)">
+        <div><div style="font-size:13px;font-weight:500">解锁 · 替嫁后被豪门宠上天后20章</div><div style="font-size:11px;color:var(--t3);margin-top:2px">2026-04-15</div></div>
+        <div style="font-size:13px;color:#FF4444;font-weight:600">-¥1.40</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: shelf-watching ══ -->
+  <div id="pg-shelf-watching" class="page">
+    <div style="padding:52px 20px 0;display:flex;align-items:center;gap:12px">
+      <div onclick="back()" style="cursor:pointer;flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="22" height="22" stroke="#fff" fill="none" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <span style="font-size:17px;font-weight:700">在看</span>
+    </div>
+    <div style="display:flex;padding:0 20px;gap:0;border-bottom:1px solid var(--bd);margin-top:4px">
+      <div class="ct on" style="font-size:14px;padding:10px 16px" id="sw-drama">短剧</div>
+      <div class="ct" style="font-size:14px;padding:10px 16px" id="sw-novel" onclick="toast('切换小说')">小说</div>
+    </div>
+    <div style="padding:0 20px 100px;flex:1;overflow-y:auto">
+      <div class="shelf-item" onclick="go('drama-landing')" style="padding:14px 0;border-bottom:1px solid var(--bd);display:flex;gap:12px;cursor:pointer">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#4B0082,#C71585);width:68px;height:90px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px">💼</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;margin-bottom:3px">总裁的替嫁甜妻</div><div style="font-size:11px;color:var(--t3);margin-bottom:7px">都市甜宠 · 共48集 · 连载中</div><div style="font-size:11px;color:var(--t2);margin-bottom:6px">已看第12集 · 已购至第12集</div><div style="height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-bottom:8px;overflow:hidden"><div style="width:25%;height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:2px"></div></div><div style="display:inline-flex;align-items:center;gap:4px;background:var(--red);color:#fff;font-size:11px;font-weight:600;padding:4px 11px;border-radius:11px">▶ 继续观看</div></div>
+      </div>
+      <div class="shelf-item" onclick="go('drama-landing')" style="padding:14px 0;border-bottom:1px solid var(--bd);display:flex;gap:12px;cursor:pointer">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#0d4f3c,#1a8c6e);width:68px;height:90px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px">🏥</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;margin-bottom:3px">绝世神医在都市</div><div style="font-size:11px;color:var(--t3);margin-bottom:7px">都市爽文 · 共40集 · 连载中</div><div style="font-size:11px;color:var(--t2);margin-bottom:6px">已看第5集 · 前8集免费</div><div style="height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-bottom:8px;overflow:hidden"><div style="width:12%;height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:2px"></div></div><div style="display:inline-flex;align-items:center;gap:4px;background:var(--red);color:#fff;font-size:11px;font-weight:600;padding:4px 11px;border-radius:11px">▶ 继续观看</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: shelf-finished ══ -->
+  <div id="pg-shelf-finished" class="page">
+    <div style="padding:52px 20px 0;display:flex;align-items:center;gap:12px">
+      <div onclick="back()" style="cursor:pointer;flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="22" height="22" stroke="#fff" fill="none" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <span style="font-size:17px;font-weight:700">完结</span>
+    </div>
+    <div style="display:flex;padding:0 20px;gap:0;border-bottom:1px solid var(--bd);margin-top:4px">
+      <div class="ct on" style="font-size:14px;padding:10px 16px">短剧</div>
+      <div class="ct" style="font-size:14px;padding:10px 16px" onclick="toast('切换小说')">小说</div>
+    </div>
+    <div style="padding:0 20px 100px;flex:1;overflow-y:auto">
+      <div class="shelf-item" onclick="go('drama-landing')" style="padding:14px 0;border-bottom:1px solid var(--bd);display:flex;gap:12px;cursor:pointer">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#191970,#4169E1);width:68px;height:90px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px">🌙</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;margin-bottom:3px">月夜迷城</div><div style="font-size:11px;color:var(--t3);margin-bottom:7px">悬疑烧脑 · 共24集 · <span style="color:#22C55E">已完结</span></div><div style="font-size:11px;color:var(--t2);margin-bottom:6px">全集免费 · 已全部看完</div><div style="height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-bottom:8px;overflow:hidden"><div style="width:100%;height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:2px"></div></div><div style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);color:var(--t2);font-size:11px;font-weight:600;padding:4px 11px;border-radius:11px">▶ 重新观看</div></div>
+      </div>
+      <div class="shelf-item" onclick="go('drama-landing')" style="padding:14px 0;border-bottom:1px solid var(--bd);display:flex;gap:12px;cursor:pointer">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#8B0000,#FF4500);width:68px;height:90px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px">⚔️</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;margin-bottom:3px">凤凰涅槃：女帝归来</div><div style="font-size:11px;color:var(--t3);margin-bottom:7px">古装爽剧 · 共60集 · <span style="color:#22C55E">已完结</span></div><div style="font-size:11px;color:var(--t2);margin-bottom:6px">已看第3集 · 还剩57集</div><div style="height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-bottom:8px;overflow:hidden"><div style="width:5%;height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:2px"></div></div><div style="display:inline-flex;align-items:center;gap:4px;background:var(--red);color:#fff;font-size:11px;font-weight:600;padding:4px 11px;border-radius:11px">▶ 继续观看</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SHEET: comments ══ -->
+  <div class="modal-ov" id="comments-modal" style="z-index:550;align-items:flex-end">
+    <div style="width:100%;background:#18181f;border-radius:28px 28px 0 0;padding:0 0 40px;max-height:75%;display:flex;flex-direction:column" id="comments-sheet">
+      <!-- 头部 -->
+      <div style="padding:14px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;position:absolute;left:50%;transform:translateX(-50%);top:10px"></div>
+        <span style="font-size:15px;font-weight:700">评论 4387</span>
+        <div onclick="closeComments()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--t2)">✕</div>
+      </div>
+      <!-- 评论列表 -->
+      <div style="overflow-y:auto;flex:1;padding:0 16px">
+        <!-- 评论1 -->
+        <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);display:flex;gap:10px">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FF6B9D,#C44BC4);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">追</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--t2)">追剧小达人</span>
+              <div style="display:flex;align-items:center;gap:4px;cursor:pointer" onclick="toast('已点赞')">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--t3)" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span style="font-size:11px;color:var(--t3)">2.3k</span>
+              </div>
+            </div>
+            <div style="font-size:14px;color:#e8e8e8;line-height:1.6;margin-bottom:5px">男主真的太帅了😭😭 第12集那个眼神把我直接看融化了，求问有没有一样心动的姐妹！！</div>
+            <div style="font-size:11px;color:var(--t3)">3小时前 · <span style="cursor:pointer;color:var(--red2)" onclick="toast('回复')">回复</span></div>
+            <!-- 楼中楼 -->
+            <div style="margin-top:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px">
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--orange));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">薯</div>
+                <div style="flex:1"><span style="font-size:11px;color:var(--red2);font-weight:600">小薯读者</span><span style="font-size:12px;color:var(--t2);margin-left:4px">回复 追剧小达人：</span><span style="font-size:12px;color:#e8e8e8">我已经重刷三遍了🥹 这部剧真的上头</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 评论2 -->
+        <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);display:flex;gap:10px">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4A90D9,#7B68EE);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">宁</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--t2)">宁静的海边</span>
+              <div style="display:flex;align-items:center;gap:4px;cursor:pointer" onclick="toast('已点赞')">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--t3)" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span style="font-size:11px;color:var(--t3)">876</span>
+              </div>
+            </div>
+            <div style="font-size:14px;color:#e8e8e8;line-height:1.6;margin-bottom:5px">第12集剧情转折真的没想到！编剧太会写了，本来以为是俗套剧情，结果……不剧透了，大家快去看！🙊</div>
+            <div style="font-size:11px;color:var(--t3)">5小时前 · <span style="cursor:pointer;color:var(--red2)" onclick="toast('回复')">回复</span></div>
+          </div>
+        </div>
+        <!-- 评论3 -->
+        <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);display:flex;gap:10px">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#E67E22,#E74C3C);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">云</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--t2)">云淡风轻z</span>
+              <div style="display:flex;align-items:center;gap:4px;cursor:pointer" onclick="toast('已点赞')">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--t3)" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span style="font-size:11px;color:var(--t3)">432</span>
+              </div>
+            </div>
+            <div style="font-size:14px;color:#e8e8e8;line-height:1.6;margin-bottom:5px">求官方快点更新！！！！已经等得焦虑了 第13集什么时候出👀</div>
+            <div style="font-size:11px;color:var(--t3)">8小时前 · <span style="cursor:pointer;color:var(--red2)" onclick="toast('回复')">回复</span></div>
+          </div>
+        </div>
+        <!-- 评论4 -->
+        <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);display:flex;gap:10px">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#1ABC9C,#27AE60);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">月</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--t2)">月光下的猫</span>
+              <div style="display:flex;align-items:center;gap:4px;cursor:pointer" onclick="toast('已点赞')">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--t3)" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span style="font-size:11px;color:var(--t3)">198</span>
+              </div>
+            </div>
+            <div style="font-size:14px;color:#e8e8e8;line-height:1.6;margin-bottom:5px">男女主的化学反应绝了 两个人站在一起就很有CP感 希望感情线快点进展💕</div>
+            <div style="font-size:11px;color:var(--t3)">昨天 · <span style="cursor:pointer;color:var(--red2)" onclick="toast('回复')">回复</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- 底部输入栏 -->
+      <div style="padding:10px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;flex-shrink:0;background:#18181f">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--orange));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">小</div>
+        <div onclick="toast('唤起输入键盘')" style="flex:1;height:36px;background:rgba(255,255,255,.07);border-radius:18px;display:flex;align-items:center;padding:0 14px;cursor:text">
+          <span style="font-size:13px;color:var(--t3)">说点什么…</span>
+        </div>
+        <div onclick="toast('表情')" style="font-size:20px;cursor:pointer">😊</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SHEET: share ══ -->
+  <div class="modal-ov" id="share-modal">
+    <div style="width:100%;background:var(--card);border-radius:28px 28px 0 0;padding:14px 0 40px" onclick="event.stopPropagation()">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 16px"></div>
+      <div style="font-size:15px;font-weight:700;padding:0 20px 14px;border-bottom:1px solid var(--bd)">分享给好友</div>
+      <!-- 联系人横划 -->
+      <div style="display:flex;gap:16px;padding:16px 20px;overflow-x:auto;border-bottom:1px solid var(--bd)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0" onclick="toast('已分享给小薯儿')">
+          <div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--orange));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">薯</div>
+          <span style="font-size:11px;color:var(--t2)">小薯儿</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0" onclick="toast('已分享给追剧小达人')">
+          <div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#FF6B9D,#C44BC4);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">追</div>
+          <span style="font-size:11px;color:var(--t2)">追剧小达人</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0" onclick="toast('已分享给读书小组')">
+          <div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#4A90D9,#7B68EE);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">读</div>
+          <span style="font-size:11px;color:var(--t2)">读书小组</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0" onclick="toast('更多联系人')">
+          <div style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:22px">···</div>
+          <span style="font-size:11px;color:var(--t2)">更多</span>
+        </div>
+      </div>
+      <!-- 分享方式 -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:16px 10px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('复制链接')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:24px">🔗</div>
+          <span style="font-size:11px;color:var(--t2)">复制链接</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('分享到微信')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(7,193,96,.15);display:flex;align-items:center;justify-content:center;font-size:24px">💚</div>
+          <span style="font-size:11px;color:var(--t2)">微信</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('分享到朋友圈')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(7,193,96,.1);display:flex;align-items:center;justify-content:center;font-size:24px">🌐</div>
+          <span style="font-size:11px;color:var(--t2)">朋友圈</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('保存图片')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,107,53,.12);display:flex;align-items:center;justify-content:center;font-size:24px">🖼️</div>
+          <span style="font-size:11px;color:var(--t2)">保存图片</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('举报')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:24px">🚩</div>
+          <span style="font-size:11px;color:var(--t2)">举报</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('不感兴趣')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:24px">🚫</div>
+          <span style="font-size:11px;color:var(--t2)">不感兴趣</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('添加到书架')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,36,66,.12);display:flex;align-items:center;justify-content:center;font-size:24px">📚</div>
+          <span style="font-size:11px;color:var(--t2)">加书架</span>
+        </div>
+      </div>
+      <div onclick="closeShareSheet()" style="margin:0 20px;height:46px;border-radius:23px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;cursor:pointer;color:var(--t2)">取消</div>
+    </div>
+  </div>
+
+  <!-- ══ SHEET: more ══ -->
+  <div class="modal-ov" id="more-modal">
+    <div style="width:100%;background:var(--card);border-radius:28px 28px 0 0;padding:14px 0 40px" onclick="event.stopPropagation()">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 16px"></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);padding:8px 10px 16px;border-bottom:1px solid var(--bd)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('已下载至本地')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:24px">⬇️</div>
+          <span style="font-size:11px;color:var(--t2)">缓存下载</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('已加入书架')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,36,66,.12);display:flex;align-items:center;justify-content:center;font-size:24px">📚</div>
+          <span style="font-size:11px;color:var(--t2)">加书架</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('画质设置')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(100,100,200,.12);display:flex;align-items:center;justify-content:center;font-size:24px">🎞️</div>
+          <span style="font-size:11px;color:var(--t2)">画质</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('字幕设置')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(100,200,100,.1);display:flex;align-items:center;justify-content:center;font-size:24px">💬</div>
+          <span style="font-size:11px;color:var(--t2)">字幕</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('投屏')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:24px">📺</div>
+          <span style="font-size:11px;color:var(--t2)">投屏</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:8px" onclick="toast('已举报')">
+          <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:24px">🚩</div>
+          <span style="font-size:11px;color:var(--t2)">举报</span>
+        </div>
+      </div>
+      <div onclick="closeMoreSheet()" style="margin:14px 20px 0;height:46px;border-radius:23px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;cursor:pointer;color:var(--t2)">取消</div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: pay ══ -->
+  <div class="modal-ov" id="pay-modal">
+    <div class="pay-sheet">
+      <div class="pay-handle"></div>
+      <div class="pay-hd">
+        <div class="pay-cover" id="pay-cover" style="background:linear-gradient(135deg,#4B0082,#C71585)">💼</div>
+        <div class="pay-info">
+          <div class="pay-title" id="pay-title">总裁的替嫁甜妻</div>
+          <div class="pay-lock-info">解锁 <span class="pay-lock-ep" id="pay-locked">第13-48集</span></div>
+        </div>
+      </div>
+      <div class="pay-opts">
+        <div class="pay-opt" id="po1" onclick="selOpt(1)">
+          <div class="pay-opt-check"></div>
+          <div class="pay-opt-row"><span class="pay-opt-title" id="pt1">解锁第13集</span><span class="pay-opt-price" id="pp1">¥0.10</span></div>
+          <div class="pay-opt-sub" id="ps1">单集解锁 · 按需购买</div>
+          <div class="pay-opt-save" id="pv1" style="display:none"></div>
+        </div>
+        <div class="pay-opt rec" id="po2" onclick="selOpt(2)">
+          <div class="pay-opt-check"></div>
+          <div class="pay-opt-row"><span class="pay-opt-title" id="pt2">解锁后20集</span><span class="pay-opt-price" id="pp2">¥1.50</span></div>
+          <div class="pay-opt-sub" id="ps2">¥0.075/集</div>
+          <div class="pay-opt-save" id="pv2">省30% · 更划算</div>
+        </div>
+        <div class="pay-opt" id="po3" onclick="selOpt(3)">
+          <div class="pay-opt-check"></div>
+          <div class="pay-opt-row"><span class="pay-opt-title" id="pt3">全集解锁（36集）</span><span class="pay-opt-price" id="pp3">¥2.80</span></div>
+          <div class="pay-opt-sub" id="ps3">一次买断 · 永久有效</div>
+          <div class="pay-opt-save" id="pv3" style="display:none"></div>
+        </div>
+      </div>
+      <div class="pay-methods">
+        <div class="pay-method-title">支付方式</div>
+        <div class="pay-method-list">
+          <div class="pay-method-btn sel" onclick="selMethod(this)"><span class="pay-method-icon">💰</span>钱包</div>
+          <div class="pay-method-btn" onclick="selMethod(this)"><span class="pay-method-icon">💚</span>微信</div>
+          <div class="pay-method-btn" onclick="selMethod(this)"><span class="pay-method-icon">🔵</span>支付宝</div>
+          <div class="pay-method-btn" onclick="selMethod(this)"><span class="pay-method-icon">🍎</span>Apple</div>
+        </div>
+      </div>
+      <button class="pay-confirm" onclick="confirmPay()">🔓 立即解锁 <span id="pay-btn-price">¥1.50</span></button>
+      <div class="pay-terms">支付即同意 <a href="#">《用户协议》</a> 和 <a href="#">《隐私政策》</a></div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: success ══ -->
+  <div class="success-ov" id="success-modal">
+    <div class="success-card">
+      <div class="success-icon">✓</div>
+      <div class="success-title">解锁成功！</div>
+      <div class="success-sub" id="success-msg">已解锁后20集，即刻享受精彩内容～</div>
+      <button class="success-btn" onclick="afterPay()">立即继续 ▶</button>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tabbar" id="tabbar">
+    <div class="ti on" id="ti-home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span>
+    </div>
+    <div class="ti" id="ti-search" onclick="toast('探索')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>探索</span>
+    </div>
+    <div class="ti" id="ti-shelf" onclick="switchTab('shelf')">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>书架</span>
+    </div>
+    <div class="ti" id="ti-profile" onclick="switchTab('profile')">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast-el"></div>
+
+</div><!-- /phone -->
+</div><!-- /wrap -->
+
+<script>
+// ── State ──
+let curPage = 'home';
+let pageStack = [];
+let payType = 'drama';
+let selPayOpt = 2;
+let liked = false;
+let fontLv = 3;
+let epDrawerOpen = false;
+let tocOpen = false;
+let settingsOpen = false;
+let toastTimer = null;
+let speeds = ['0.75x','1.0x','1.25x','1.5x','2.0x'];
+let speedIdx = 1;
+let contentTab = 'drama'; // 'drama' | 'novel'
+let shelfTab = 'drama';
+
+// ── Page routing ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  const pg = document.getElementById('pg-' + id);
+  if (pg) pg.classList.add('on');
+  curPage = id;
+
+  // tabbar
+  const tb = document.getElementById('tabbar');
+  const noTab = ['player', 'reader'];
+  tb.classList.toggle('hidden', noTab.includes(id));
+
+  // status bar style
+  const sb = document.getElementById('sbar');
+  if (id === 'reader') {
+    sb.className = 'sbar light';
+  } else {
+    sb.className = 'sbar dark';
+  }
+
+  // close all drawers when switching pages
+  if (epDrawerOpen) { epDrawerOpen = false; document.getElementById('ep-drawer').classList.remove('open'); }
+  if (tocOpen) { tocOpen = false; document.getElementById('reader-toc').classList.remove('open'); }
+  if (settingsOpen) { settingsOpen = false; document.getElementById('reader-settings').classList.remove('open'); }
+}
+
+function go(id) {
+  pageStack.push(curPage);
+  showPage(id);
+  // update proto nav
+  document.querySelectorAll('.pn-item').forEach(i => i.classList.remove('on'));
+}
+
+function back() {
+  if (epDrawerOpen) { toggleEpDrawer(); return; }
+  if (tocOpen) { closeToc(); return; }
+  if (settingsOpen) { toggleReaderSettings(); return; }
+  const prev = pageStack.pop() || 'home';
+  showPage(prev);
+}
+
+function switchTab(tab) {
+  pageStack = [];
+  showPage(tab);
+  document.querySelectorAll('.ti').forEach(t => t.classList.remove('on'));
+  const el = document.getElementById('ti-' + tab);
+  if (el) el.classList.add('on');
+}
+
+// ── Home content tabs ──
+function setContentTab(tab) {
+  contentTab = tab;
+  document.getElementById('ct-drama').classList.toggle('on', tab === 'drama');
+  document.getElementById('ct-novel').classList.toggle('on', tab === 'novel');
+  document.getElementById('drama-content').style.display = tab === 'drama' ? '' : 'none';
+  document.getElementById('novel-content').style.display = tab === 'novel' ? '' : 'none';
+  document.getElementById('search-placeholder').textContent = tab === 'drama' ? '搜短剧、剧名、演员' : '搜小说、书名、作者';
+}
+
+// ── Player ──
+function toggleEpDrawer() {
+  epDrawerOpen = !epDrawerOpen;
+  document.getElementById('ep-drawer').classList.toggle('open', epDrawerOpen);
+}
+
+function pickEp(el, num) {
+  if (el.classList.contains('lock')) { triggerNextEp(); return; }
+  document.querySelectorAll('.ep-db').forEach(b => b.classList.remove('cur'));
+  el.classList.add('cur');
+  document.querySelector('.pl-ep-info').textContent = '第' + num + '集 · 00:00 / 09:38';
+  toast('切换到第' + num + '集');
+  toggleEpDrawer();
+}
+
+function triggerNextEp() {
+  if (epDrawerOpen) toggleEpDrawer();
+  setTimeout(() => openPay('drama'), 200);
+}
+
+function cycleSpeed(el) {
+  speedIdx = (speedIdx + 1) % speeds.length;
+  el.textContent = speeds[speedIdx];
+  toast('播放速度：' + speeds[speedIdx]);
+}
+
+function toggleLike(el) {
+  liked = !liked;
+  const path = document.getElementById('heart-path');
+  const cnt = document.getElementById('like-count');
+  path.style.fill = liked ? '#FF2442' : 'none';
+  path.style.stroke = liked ? '#FF2442' : '#fff';
+  cnt.textContent = liked ? '9.2万+1' : '9.2万';
+  toast(liked ? '已点赞 ❤️' : '取消点赞');
+}
+
+// ── Reader ──
+function openToc() {
+  tocOpen = true;
+  document.getElementById('reader-toc').classList.add('open');
+}
+function closeToc() {
+  tocOpen = false;
+  document.getElementById('reader-toc').classList.remove('open');
+}
+function toggleReaderSettings() {
+  settingsOpen = !settingsOpen;
+  document.getElementById('reader-settings').classList.toggle('open', settingsOpen);
+}
+function adjustFont(d) {
+  fontLv = Math.max(1, Math.min(5, fontLv + d));
+  const pct = (fontLv - 1) / 4;
+  document.getElementById('rs-fill').style.width = (20 + pct * 60) + '%';
+  const sizes = [13, 14, 16, 18, 20];
+  document.querySelector('.chap-text').style.fontSize = sizes[fontLv - 1] + 'px';
+  toast('字体：' + sizes[fontLv - 1] + 'px');
+}
+function setBg(el, bg, color) {
+  document.querySelectorAll('.rs-bg').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  const rw = document.getElementById('pg-reader').querySelector('.reader-wrap');
+  rw.style.background = bg;
+  rw.style.color = color;
+  document.querySelector('.reader-hd').style.background = bg;
+  document.querySelector('.reader-paywall').style.background = bg;
+  toast('已切换背景');
+}
+
+// ── Shelf ──
+function setShelfTab(tab) {
+  shelfTab = tab;
+  document.getElementById('shelf-tab-drama').classList.toggle('on', tab === 'drama');
+  document.getElementById('shelf-tab-novel').classList.toggle('on', tab === 'novel');
+  const list = document.getElementById('shelf-list');
+  if (tab === 'novel') {
+    list.innerHTML = `
+      <div class="shelf-item" onclick="go('novel-landing')">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#FF6B9D,#C44BC4)">💕</div>
+        <div class="shelf-info">
+          <div class="shelf-title">替嫁后被豪门宠上天</div>
+          <div class="shelf-sub">甜宠 · 共320章 · 夜风著</div>
+          <div class="shelf-prog-txt">读至第8章 · 已购至第15章</div>
+          <div class="shelf-prog-track"><div class="shelf-prog-fill" style="width:2.5%"></div></div>
+          <div class="shelf-continue">📖 继续阅读</div>
+        </div>
+      </div>
+      <div class="shelf-item" onclick="go('novel-landing')">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#4A90D9,#7B68EE)">🗡️</div>
+        <div class="shelf-info">
+          <div class="shelf-title">我在异世界当大佬</div>
+          <div class="shelf-sub">玄幻 · 已更580章</div>
+          <div class="shelf-prog-txt">读至第21章 · 前10章免费</div>
+          <div class="shelf-prog-track"><div class="shelf-prog-fill" style="width:3.6%"></div></div>
+          <div class="shelf-continue">📖 继续阅读</div>
+        </div>
+      </div>`;
+  } else {
+    list.innerHTML = `
+      <div class="shelf-item" onclick="go('drama-landing')">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#4B0082,#C71585)">💼</div>
+        <div class="shelf-info">
+          <div class="shelf-title">总裁的替嫁甜妻</div>
+          <div class="shelf-sub">都市甜宠 · 共48集</div>
+          <div class="shelf-prog-txt">已看第12集 · 已购至第12集</div>
+          <div class="shelf-prog-track"><div class="shelf-prog-fill" style="width:25%"></div></div>
+          <div class="shelf-continue">▶ 继续观看</div>
+        </div>
+      </div>
+      <div class="shelf-item" onclick="go('drama-landing')">
+        <div class="shelf-cover" style="background:linear-gradient(135deg,#8B0000,#FF4500)">⚔️</div>
+        <div class="shelf-info">
+          <div class="shelf-title">凤凰涅槃：女帝归来</div>
+          <div class="shelf-sub">古装 · 共60集</div>
+          <div class="shelf-prog-txt">已看第3集 · 前3集免费</div>
+          <div class="shelf-prog-track"><div class="shelf-prog-fill" style="width:5%"></div></div>
+          <div class="shelf-continue">▶ 继续观看</div>
+        </div>
+      </div>`;
+  }
+}
+
+// ── Pay modal ──
+const PAY_DATA = {
+  drama: {
+    cover: '💼', coverBg: 'linear-gradient(135deg,#4B0082,#C71585)',
+    title: '总裁的替嫁甜妻', locked: '第13-48集',
+    opts: [
+      {t:'解锁第13集', p:'¥0.10', s:'单集解锁 · 按需购买', v:''},
+      {t:'解锁后20集', p:'¥1.50', s:'¥0.075/集', v:'省30% · 更划算'},
+      {t:'全集解锁（36集）', p:'¥2.80', s:'一次买断 · 永久有效', v:''},
+    ],
+    success: ['已解锁第13集，继续精彩剧情！','已解锁后20集，尽情畅看！','全集解锁成功，永久畅看48集！']
+  },
+  novel: {
+    cover: '💕', coverBg: 'linear-gradient(135deg,#FF6B9D,#C44BC4)',
+    title: '替嫁后被豪门宠上天', locked: '第9章及后续章节',
+    opts: [
+      {t:'解锁第9章', p:'¥0.10', s:'单章解锁 · 按需购买', v:''},
+      {t:'解锁后20章', p:'¥1.40', s:'¥0.07/章', v:'省30% · 更划算'},
+      {t:'全本解锁（305章）', p:'¥18.00', s:'一次买断 · 永久有效', v:''},
+    ],
+    success: ['已解锁第9章，继续阅读！','已解锁后20章，尽情畅读！','全本解锁成功，永久畅读320章！']
+  }
+};
+
+function openPay(type) {
+  payType = type;
+  selPayOpt = 2;
+  const d = PAY_DATA[type];
+  document.getElementById('pay-cover').textContent = d.cover;
+  document.getElementById('pay-cover').style.background = d.coverBg;
+  document.getElementById('pay-title').textContent = d.title;
+  document.getElementById('pay-locked').textContent = d.locked;
+  d.opts.forEach((o, i) => {
+    const n = i + 1;
+    const getEl = id => document.getElementById(id);
+    if (getEl('pt'+n)) getEl('pt'+n).textContent = o.t;
+    if (getEl('pp'+n)) getEl('pp'+n).textContent = o.p;
+    if (getEl('ps'+n)) getEl('ps'+n).textContent = o.s;
+    const pv = getEl('pv'+n);
+    if (pv) { pv.textContent = o.v; pv.style.display = o.v ? '' : 'none'; }
+  });
+  updatePayBtn();
+  document.querySelectorAll('.pay-opt').forEach((o, i) => o.classList.toggle('sel', i === 1));
+  document.getElementById('pay-modal').classList.add('open');
+}
+
+function closePay() {
+  document.getElementById('pay-modal').classList.remove('open');
+}
+
+function handlePayBg(e) { closePay(); }
+
+function selOpt(n) {
+  selPayOpt = n;
+  document.querySelectorAll('.pay-opt').forEach((o, i) => o.classList.toggle('sel', i === n - 1));
+  updatePayBtn();
+}
+
+function updatePayBtn() {
+  const price = PAY_DATA[payType].opts[selPayOpt - 1].p;
+  document.getElementById('pay-btn-price').textContent = price;
+}
+
+function selMethod(el) {
+  document.querySelectorAll('.pay-method-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function confirmPay() {
+  closePay();
+  const msg = PAY_DATA[payType].success[selPayOpt - 1];
+  document.getElementById('success-msg').textContent = msg;
+  document.getElementById('success-modal').classList.add('open');
+}
+
+function afterPay() {
+  document.getElementById('success-modal').classList.remove('open');
+  go(payType === 'drama' ? 'player' : 'reader');
+  toast('解锁成功，继续享用～');
+}
+
+// ── Toast ──
+function toast(msg) {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── Collect / Star ──
+let faved = false;
+function toggleFav() {
+  faved = !faved;
+  const star = document.getElementById('fav-star');
+  const cnt = document.getElementById('fav-count');
+  star.style.fill = faved ? '#FFD700' : 'none';
+  star.style.stroke = faved ? '#FFD700' : '#fff';
+  cnt.textContent = faved ? '2.1万+1' : '2.1万';
+  toast(faved ? '已收藏 ⭐' : '取消收藏');
+}
+
+// ── Comments ──
+function openComments() {
+  document.getElementById('comments-modal').classList.add('open');
+}
+function closeComments() {
+  document.getElementById('comments-modal').classList.remove('open');
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const cm = document.getElementById('comments-modal');
+  if(cm) cm.addEventListener('click', function(e){ if(e.target===this) closeComments(); });
+});
+
+// ── Share sheet ──
+function openShareSheet() {
+  document.getElementById('share-modal').classList.add('open');
+}
+function closeShareSheet() {
+  document.getElementById('share-modal').classList.remove('open');
+}
+
+// ── More sheet ──
+function openMoreSheet() {
+  document.getElementById('more-modal').classList.add('open');
+}
+function closeMoreSheet() {
+  document.getElementById('more-modal').classList.remove('open');
+}
+
+// ── Desc expand ──
+let descExpanded = {};
+function toggleDesc(type) {
+  descExpanded[type] = !descExpanded[type];
+  const short = document.getElementById(type + '-desc-short');
+  const full = document.getElementById(type + '-desc-full');
+  const toggle = document.getElementById(type + '-desc-toggle');
+  if (descExpanded[type]) {
+    short.style.display = 'none';
+    full.style.display = '';
+    toggle.textContent = '收起 ‹';
+  } else {
+    short.style.display = '';
+    full.style.display = 'none';
+    toggle.textContent = '展开全部 ›';
+  }
+}
+
+// ── showPage: also hide sheets ──
+const _origShowPage = showPage;
+// patch to close sheets
+const _closeSheets = () => {
+  closeShareSheet(); closeMoreSheet();
+};
+
+// ── Modal overlay click-outside to close ──
+// Each modal-ov: clicking the overlay (not the sheet) closes it
+['pay-modal','share-modal','more-modal','comments-modal'].forEach(function(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  // Use mousedown on the sheet children to set a flag, then check on overlay click
+  el.addEventListener('click', function(e){
+    if(e.target === el) {
+      if(id==='pay-modal') closePay();
+      else if(id==='share-modal') closeShareSheet();
+      else if(id==='more-modal') closeMoreSheet();
+      else if(id==='comments-modal') closeComments();
+    }
+  });
+});
+
+// Init
+showPage('home');
+</script>
+</body>
+</html>
